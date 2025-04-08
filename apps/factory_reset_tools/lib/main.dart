@@ -1,35 +1,61 @@
-import 'dart:async';
-
-import 'package:factory_reset_tools/l10n.dart';
-import 'package:factory_reset_tools/l10n/factory_reset_tools_localizations.dart';
-import 'package:factory_reset_tools/pages/reset_tools_wizard.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ubuntu_localizations/ubuntu_localizations.dart';
-import 'package:ubuntu_wizard/ubuntu_wizard.dart';
-import 'package:yaru/yaru.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:factory_reset_tools/reset_tools_wizard.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
-Future<void> main() async {
-  await YaruWindowTitleBar.ensureInitialized();
-
-  runApp(const FactoryResetTools());
+void main() {
+  runApp(const MyAccessibleApp());
 }
 
-class FactoryResetTools extends StatelessWidget {
-  const FactoryResetTools({super.key});
+class MyAccessibleApp extends StatefulWidget {
+  const MyAccessibleApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyAccessibleApp> createState() => _MyAccessibleAppState();
+}
+
+class _MyAccessibleAppState extends State<MyAccessibleApp> {
+  bool _useHighContrast = false;
+  final FlutterTts _tts = FlutterTts();
+
+  @override
+  void initState() {
+    super.initState();
+    _tts.speak("Welcome to the Factory Reset Wizard. Use tab key to navigate.");
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      child: WizardApp(
-        onGenerateTitle: (context) {
-          return FactoryResetToolsLocalizations.of(context).windowTitle;
-        },
-        localizationsDelegates: const [
-          FactoryResetToolsLocalizations.delegate,
-          UbuntuLocalizations.delegate,
-        ],
-        supportedLocales: supportedLocales,
-        home: const ResetToolsWizard(),
+    return MaterialApp(
+      title: 'Factory Reset Tools',
+      theme: _useHighContrast ? ThemeData.highContrast() : ThemeData.light(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en', '')],
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Factory Reset Tools'),
+          actions: [
+            Switch(
+              value: _useHighContrast,
+              onChanged: (value) {
+                setState(() {
+                  _useHighContrast = value;
+                  _tts.speak("High contrast mode ${value ? "enabled" : "disabled"}");
+                });
+              },
+              tooltip: 'Toggle High Contrast Theme',
+            )
+          ],
+        ),
+        body: FocusTraversalGroup(
+          child: Semantics(
+            label: 'Reset Tools Wizard Main Screen',
+            child: const ResetToolsWizard(),
+          ),
+        ),
       ),
     );
   }
